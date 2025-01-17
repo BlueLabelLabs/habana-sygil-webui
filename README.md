@@ -191,6 +191,70 @@ then finetuned on 512x512 images.
 in its training data.
 Details on the training procedure and data, as well as the intended use of the model can be found in the corresponding [model card](https://huggingface.co/CompVis/stable-diffusion).
 
+## Stable Diffusion Integration with Intel® Gaudi® HPU
+
+Stable Diffusion has been successfully integrated with Intel® Gaudi® HPUs, enabling high-performance text-to-image generation and image modifications on Habana’s specialized AI hardware. This enhancement leverages Habana’s optimized PyTorch environment to maximize efficiency and scalability for AI workloads.
+
+### Key Features of Intel® Gaudi® HPU Integration:
+
+- **Efficient Sampling:** The integration utilizes Habana’s HPU-specific optimizations for accelerated Stable Diffusion pipeline execution.
+- **Reduced Latency:** Support for HPU graphs and Habana’s framework reduces the latency of inference workflows.
+- **Dockerized Environment:** Provides a pre-configured Docker environment for seamless setup and deployment.
+- **Compatibility with Diffusers Library:** Easy integration with Hugging Face’s Diffusers library for streamlined development.
+
+### How to Use Stable Diffusion with Intel® Gaudi® HPUs:
+
+#### Setup the Environment
+1. **Build the Docker Image:**
+   ```bash
+   docker build -t sd_hpu:latest -f Dockerfile.hpu .
+   ```
+   Use the `vault.habana.ai/gaudi-docker/1.18.0/ubuntu22.04/habanalabs/pytorch-installer-2.3.1:latest` base image, ensuring compatibility with your system configuration.
+
+2. **Run the Container:**
+   ```bash
+   docker run -it --runtime=habana sd_hpu:latest
+   ```
+   Optionally, map your local project directory into the container using the `-v` flag.
+
+#### Running Stable Diffusion on HPU
+
+For inference using the Diffusers library:
+
+```python
+from torch import autocast, device
+from diffusers import StableDiffusionPipeline
+import habana_frameworks.torch.core as htcore
+from habana_frameworks.torch.hpu import wrap_in_hpu_graph
+
+# Load the pipeline
+pipe = StableDiffusionPipeline.from_pretrained(
+    "CompVis/stable-diffusion-v1-4",
+    use_auth_token=True
+)
+
+# Enable HPU graph optimization and move the pipeline to HPU
+gpu_pipe = wrap_in_hpu_graph(pipe)
+gpu_pipe = pipe.to(device("hpu")).eval()
+
+prompt = "a futuristic cityscape under a starry sky"
+image = gpu_pipe(prompt).images[0]
+image.save("output_hpu.png")
+```
+
+For image modification tasks, use the following command:
+
+```bash
+python scripts/img2img.py --prompt "A surreal dreamscape" --init-img <path-to-img.jpg> --strength 0.8 --device hpu
+```
+
+### Additional Notes
+
+- Ensure that the required models and checkpoints are available in their respective directories.
+- Refer to the [Habana AI Developer Documentation](https://docs.habana.ai/en/latest/index.html) for further guidance on HPU-specific optimizations and troubleshooting.
+
+With this integration, developers can now harness the power of Intel® Gaudi® HPUs for Stable Diffusion workflows, enabling cutting-edge generative AI tasks with optimized performance and scalability.
+
 ## Comments
 
 - Our code base for the diffusion models builds heavily on [OpenAI's ADM codebase](https://github.com/openai/guided-diffusion)
