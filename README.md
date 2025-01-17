@@ -195,58 +195,60 @@ Details on the training procedure and data, as well as the intended use of the m
 
 Stable Diffusion has been successfully integrated with Intel® Gaudi® HPUs, enabling high-performance text-to-image generation and image modifications on Habana’s specialized AI hardware. This enhancement leverages Habana’s optimized PyTorch environment to maximize efficiency and scalability for AI workloads.
 
-### Key Features of Intel® Gaudi® HPU Integration:
+## Stable Diffusion Integration with Intel® Gaudi® HPU
 
-- **Efficient Sampling:** The integration utilizes Habana’s HPU-specific optimizations for accelerated Stable Diffusion pipeline execution.
-- **Reduced Latency:** Support for HPU graphs and Habana’s framework reduces the latency of inference workflows.
-- **Dockerized Environment:** Provides a pre-configured Docker environment for seamless setup and deployment.
-- **Compatibility with Diffusers Library:** Easy integration with Hugging Face’s Diffusers library for streamlined development.
+Stable Diffusion can be effectively run on Intel® Gaudi® HPUs, providing high-performance capabilities for deploying text-to-image generation systems in Dockerized environments. This approach is particularly valuable for frontend applications requiring real-time generative AI solutions. 
 
-### How to Use Stable Diffusion with Intel® Gaudi® HPUs:
+### Key Benefits of Intel® Gaudi® HPUs:
 
-#### Setup the Environment
-1. **Build the Docker Image:**
+- **Optimized Performance:** Intel® Gaudi® HPUs are designed for deep learning workloads, delivering efficient and scalable solutions for generative AI tasks.
+- **Docker Compatibility:** Pre-configured Docker containers make it easy to set up and deploy Stable Diffusion workflows.
+- **Cost Efficiency:** Lower training and inference costs compared to traditional GPU-based systems.
+- **Documentation and Support:** Comprehensive resources are available at [Intel® Gaudi® Documentation](https://docs.habana.ai/en/latest/index.html).
+
+### Running Stable Diffusion on Intel® Gaudi® HPUs with Docker
+
+#### Step 1: Prepare the Docker Environment
+
+Intel® provides prebuilt Docker images optimized for Gaudi® HPUs. Follow these steps to set up your environment:
+
+1. Pull the Base Image:
+   ```bash
+   docker pull vault.habana.ai/gaudi-docker/1.18.0/ubuntu22.04/habanalabs/pytorch-installer-2.3.1:latest
+   ```
+
+2. Build a Docker Image for Stable Diffusion:
    ```bash
    docker build -t sd_hpu:latest -f Dockerfile.hpu .
    ```
-   Use the `vault.habana.ai/gaudi-docker/1.18.0/ubuntu22.04/habanalabs/pytorch-installer-2.3.1:latest` base image, ensuring compatibility with your system configuration.
 
-2. **Run the Container:**
+3. Run the Docker Container:
    ```bash
    docker run -it --runtime=habana sd_hpu:latest
    ```
-   Optionally, map your local project directory into the container using the `-v` flag.
+   Use the `-v` option to mount local directories if needed.
 
-#### Running Stable Diffusion on HPU
+#### Step 2: Configure Stable Diffusion
 
-For inference using the Diffusers library:
+Inside the Docker container, configure and run Stable Diffusion pipelines. The Docker environment comes preloaded with Habana-specific optimizations, enabling seamless execution.
 
-```python
-from torch import autocast, device
-from diffusers import StableDiffusionPipeline
-import habana_frameworks.torch.core as htcore
-from habana_frameworks.torch.hpu import wrap_in_hpu_graph
+### Exploring Habana’s Tools and Documentation
 
-# Load the pipeline
-pipe = StableDiffusionPipeline.from_pretrained(
-    "CompVis/stable-diffusion-v1-4",
-    use_auth_token=True
-)
+Habana’s tools, such as SynapseAI and Gaudi-specific libraries, are tailored to enhance the performance of AI models. Key resources include:
 
-# Enable HPU graph optimization and move the pipeline to HPU
-gpu_pipe = wrap_in_hpu_graph(pipe)
-gpu_pipe = pipe.to(device("hpu")).eval()
+- **Framework Integrations:** Optimized support for PyTorch and TensorFlow.
+- **HPU Graph Support:** Efficient execution for both training and inference workflows.
+- **Detailed Documentation:** Access the [Intel® Gaudi® Documentation](https://docs.habana.ai/en/latest/index.html) for technical insights, best practices, and troubleshooting.
 
-prompt = "a futuristic cityscape under a starry sky"
-image = gpu_pipe(prompt).images[0]
-image.save("output_hpu.png")
-```
+### Why Choose Intel® Gaudi® HPUs
 
-For image modification tasks, use the following command:
+Intel® Gaudi® HPUs empower developers to achieve real-time, low-latency performance for frontend AI applications. By leveraging Dockerized environments and Habana’s software stack, developers can:
 
-```bash
-python scripts/img2img.py --prompt "A surreal dreamscape" --init-img <path-to-img.jpg> --strength 0.8 --device hpu
-```
+- Quickly deploy AI solutions with minimal setup.
+- Optimize generative AI tasks for cost and efficiency.
+- Access a robust ecosystem of tools and resources.
+
+Incorporating Intel® Gaudi® HPUs into your AI workflows ensures that you stay ahead in delivering cutting-edge solutions for next-generation frontend applications.
 
 ### Additional Notes
 
