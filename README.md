@@ -168,6 +168,54 @@ Please see the [Post-Processing Documentation](https://sygil-dev.github.io/sygil
 [Patrick Esser](https://github.com/pesser),
 [Björn Ommer](https://hci.iwr.uni-heidelberg.de/Staff/bommer)
 
+
+## Diffusers Integration on Intel® Gaudi® HPU
+
+A simple way to download and sample Stable Diffusion is by using the [diffusers library](https://github.com/huggingface/diffusers/tree/main#new--stable-diffusion-is-now-fully-compatible-with-diffusers):
+
+```python
+from torch import autocast
+import time
+from optimum.habana.diffusers import GaudiDDIMScheduler, GaudiStableDiffusionPipeline
+
+model_name = "CompVis/stable-diffusion-v1-4"
+
+scheduler = GaudiDDIMScheduler.from_pretrained(model_name, subfolder="scheduler")
+
+pipe = GaudiStableDiffusionPipeline.from_pretrained(
+    model_name,
+    scheduler=scheduler,
+    use_habana=True,
+    use_hpu_graphs=True,
+    gaudi_config="Habana/stable-diffusion",
+)
+
+from habana_frameworks.torch.utils.library_loader import load_habana_module
+from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+load_habana_module()
+
+# Adapt transformers models to Gaudi for optimization
+adapt_transformers_to_gaudi()
+
+pipe = pipe.to("hpu")
+
+prompt = "a photo of an astronaut riding a horse on mars"
+
+with autocast("hpu"):
+    t1 = time.perf_counter()
+    upscaled_image = pipe(
+        prompt=[prompt],
+        num_images_per_prompt=2,
+        batch_size=4,
+        output_type="pil",
+    ).images[0]
+
+upscaled_image.save("astronaut_rides_horse.png")
+print(f"Time taken: {time.perf_counter() - t1:.2f}s")
+```
+
+Note: This information has also been added to the Stable Diffusion core repository.
+
 **CVPR '22 Oral**
 
 which is available on [GitHub](https://github.com/CompVis/latent-diffusion). PDF at [arXiv](https://arxiv.org/abs/2112.10752). Please also visit our [Project page](https://ommer-lab.com/research/latent-diffusion-models/).
@@ -190,6 +238,72 @@ then finetuned on 512x512 images.
 *Note: Stable Diffusion v1 is a general text-to-image diffusion model and therefore mirrors biases and (mis-)conceptions that are present
 in its training data.
 Details on the training procedure and data, as well as the intended use of the model can be found in the corresponding [model card](https://huggingface.co/CompVis/stable-diffusion).
+
+## Stable Diffusion Integration with Intel® Gaudi® HPU
+
+Stable Diffusion has been successfully integrated with Intel® Gaudi® HPUs, enabling high-performance text-to-image generation and image modifications on Habana’s specialized AI hardware. This enhancement leverages Habana’s optimized PyTorch environment to maximize efficiency and scalability for AI workloads.
+
+## Stable Diffusion Integration with Intel® Gaudi® HPU
+
+Stable Diffusion can be effectively run on Intel® Gaudi® HPUs, providing high-performance capabilities for deploying text-to-image generation systems in Dockerized environments. This approach is particularly valuable for frontend applications requiring real-time generative AI solutions. 
+
+### Key Benefits of Intel® Gaudi® HPUs:
+
+- **Optimized Performance:** Intel® Gaudi® HPUs are designed for deep learning workloads, delivering efficient and scalable solutions for generative AI tasks.
+- **Docker Compatibility:** Pre-configured Docker containers make it easy to set up and deploy Stable Diffusion workflows.
+- **Cost Efficiency:** Lower training and inference costs compared to traditional GPU-based systems.
+- **Documentation and Support:** Comprehensive resources are available at [Intel® Gaudi® Documentation](https://docs.habana.ai/en/latest/index.html).
+
+### Running Stable Diffusion on Intel® Gaudi® HPUs with Docker
+
+#### Step 1: Prepare the Docker Environment
+
+Intel® provides prebuilt Docker images optimized for Gaudi® HPUs. Follow these steps to set up your environment:
+
+1. Pull the Base Image:
+   ```bash
+   docker pull vault.habana.ai/gaudi-docker/1.18.0/ubuntu22.04/habanalabs/pytorch-installer-2.3.1:latest
+   ```
+
+2. Build a Docker Image for Stable Diffusion:
+   ```bash
+   docker build -t sd_hpu:latest -f Dockerfile.hpu .
+   ```
+
+3. Run the Docker Container:
+   ```bash
+   docker run -it --runtime=habana sd_hpu:latest
+   ```
+   Use the `-v` option to mount local directories if needed.
+
+#### Step 2: Configure Stable Diffusion
+
+Inside the Docker container, configure and run Stable Diffusion pipelines. The Docker environment comes preloaded with Habana-specific optimizations, enabling seamless execution.
+
+### Exploring Habana’s Tools and Documentation
+
+Habana’s tools, such as SynapseAI and Gaudi-specific libraries, are tailored to enhance the performance of AI models. Key resources include:
+
+- **Framework Integrations:** Optimized support for PyTorch and TensorFlow.
+- **HPU Graph Support:** Efficient execution for both training and inference workflows.
+- **Detailed Documentation:** Access the [Intel® Gaudi® Documentation](https://docs.habana.ai/en/latest/index.html) for technical insights, best practices, and troubleshooting.
+
+### Why Choose Intel® Gaudi® HPUs
+
+Intel® Gaudi® HPUs empower developers to achieve real-time, low-latency performance for frontend AI applications. By leveraging Dockerized environments and Habana’s software stack, developers can:
+
+- Quickly deploy AI solutions with minimal setup.
+- Optimize generative AI tasks for cost and efficiency.
+- Access a robust ecosystem of tools and resources.
+
+Incorporating Intel® Gaudi® HPUs into your AI workflows ensures that you stay ahead in delivering cutting-edge solutions for next-generation frontend applications.
+
+### Additional Notes
+
+- Ensure that the required models and checkpoints are available in their respective directories.
+- Refer to the [Habana AI Developer Documentation](https://docs.habana.ai/en/latest/index.html) for further guidance on HPU-specific optimizations and troubleshooting.
+
+With this integration, developers can now harness the power of Intel® Gaudi® HPUs for Stable Diffusion workflows, enabling cutting-edge generative AI tasks with optimized performance and scalability.
 
 ## Comments
 
