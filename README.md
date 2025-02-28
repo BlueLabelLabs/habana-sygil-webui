@@ -168,6 +168,54 @@ Please see the [Post-Processing Documentation](https://sygil-dev.github.io/sygil
 [Patrick Esser](https://github.com/pesser),
 [Björn Ommer](https://hci.iwr.uni-heidelberg.de/Staff/bommer)
 
+
+## Diffusers Integration on Intel® Gaudi® HPU
+
+A simple way to download and sample Stable Diffusion is by using the [diffusers library](https://github.com/huggingface/diffusers/tree/main#new--stable-diffusion-is-now-fully-compatible-with-diffusers):
+
+```python
+from torch import autocast
+import time
+from optimum.habana.diffusers import GaudiDDIMScheduler, GaudiStableDiffusionPipeline
+
+model_name = "CompVis/stable-diffusion-v1-4"
+
+scheduler = GaudiDDIMScheduler.from_pretrained(model_name, subfolder="scheduler")
+
+pipe = GaudiStableDiffusionPipeline.from_pretrained(
+    model_name,
+    scheduler=scheduler,
+    use_habana=True,
+    use_hpu_graphs=True,
+    gaudi_config="Habana/stable-diffusion",
+)
+
+from habana_frameworks.torch.utils.library_loader import load_habana_module
+from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+load_habana_module()
+
+# Adapt transformers models to Gaudi for optimization
+adapt_transformers_to_gaudi()
+
+pipe = pipe.to("hpu")
+
+prompt = "a photo of an astronaut riding a horse on mars"
+
+with autocast("hpu"):
+    t1 = time.perf_counter()
+    upscaled_image = pipe(
+        prompt=[prompt],
+        num_images_per_prompt=2,
+        batch_size=4,
+        output_type="pil",
+    ).images[0]
+
+upscaled_image.save("astronaut_rides_horse.png")
+print(f"Time taken: {time.perf_counter() - t1:.2f}s")
+```
+
+Note: This information has also been added to the Stable Diffusion core repository.
+
 **CVPR '22 Oral**
 
 which is available on [GitHub](https://github.com/CompVis/latent-diffusion). PDF at [arXiv](https://arxiv.org/abs/2112.10752). Please also visit our [Project page](https://ommer-lab.com/research/latent-diffusion-models/).
